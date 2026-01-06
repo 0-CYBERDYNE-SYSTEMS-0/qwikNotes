@@ -1,0 +1,30 @@
+{
+  "name": "qwik-notes",
+  "version": "1.0.0",
+  "author": "QwikNotes",
+  "description": "Quick menu bar notes for AI prompts, API keys, and text",
+  "main": "src/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "electron-builder --mac --dir",
+    "dist": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.qwiknotes.app",
+    "productName": "QwikNotes",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "src/assets/icon.icns",
+      "extendInfo": {
+        "LSUIElement": true
+      }
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "menubar": "^9.5.2"
+  }
+}
