@@ -40,27 +40,7 @@ function createTray() {
     { type: 'separator' },
     ...Array.from({ length: NOTE_COUNT }, (_, i) => ({
       label: notes[i] ? `Note ${i + 1}: ${notes[i].substring(0, 30)}${notes[i].length > 30 ? '...' : ''}` : `Note ${i + 1}: (empty)`,
-      submenu: [
-        {
-          label: 'Edit...',
-          click: () => openEditor(i)
-        },
-        {
-          label: 'Copy',
-          click: () => {
-            if (notes[i]) {
-              require('electron').clipboard.writeText(notes[i]);
-            }
-          }
-        },
-        {
-          label: 'Clear',
-          click: () => {
-            notes[i] = '';
-            saveNotes(notes);
-          }
-        }
-      ]
+      click: () => openEditor(i)
     })),
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() }
