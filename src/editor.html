@@ -35,6 +35,44 @@
       gap: 10px;
       margin-top: 15px;
     }
+    .clipboard-tools {
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .clipboard-tools input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .clipboard-results {
+      max-height: 120px;
+      overflow-y: auto;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      background: #fafafa;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .clipboard-results li {
+      padding: 8px 10px;
+      font-size: 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .clipboard-results li:last-child { border-bottom: none; }
+    .clipboard-results li.selected { background: #e8f1ff; }
+    .clipboard-hint {
+      font-size: 11px;
+      color: #666;
+      margin-top: 6px;
+    }
     button {
       padding: 10px 20px;
       border: none;
@@ -54,6 +92,11 @@
 <body>
   <div class="label" id="noteLabel">Note 1</div>
   <textarea id="noteText" placeholder="Type your note here... (AI prompt, API key, etc.)"></textarea>
+  <div class="clipboard-tools" id="clipboardTools" hidden>
+    <input id="clipboardSearch" type="text" placeholder="Search clipboard history..." />
+    <ul class="clipboard-results" id="clipboardResults"></ul>
+    <div class="clipboard-hint">Use ↑/↓ to move, Enter to copy selected item.</div>
+  </div>
   <div class="buttons">
     <button class="copy" onclick="copyNote()">Copy</button>
     <button class="clear" onclick="clearNote()">Clear</button>
@@ -64,9 +107,13 @@
     const urlParams = new URLSearchParams(window.location.search);
     const index = parseInt(urlParams.get('index'));
     const currentNote = urlParams.get('note') || '';
+    const isClipboardMode = index === 4;
+    let filteredHistory = [];
+    let selectedHistoryIndex = -1;
 
-    document.getElementById('noteLabel').textContent = `Note ${index + 1}`;
+    document.getElementById('noteLabel').textContent = isClipboardMode ? 'Clipboard Manager (Note 5)' : `Note ${index + 1}`;
     document.getElementById('noteText').value = currentNote;
+    document.getElementById('clipboardTools').hidden = !isClipboardMode;
 
     function saveNote() {
       const text = document.getElementById('noteText').value;
@@ -76,12 +123,63 @@
     }
 
     function copyNote() {
-      const text = document.getElementById('noteText').value;
+      const text = isClipboardMode && selectedHistoryIndex >= 0
+        ? filteredHistory[selectedHistoryIndex]
+        : document.getElementById('noteText').value;
       if (text) window.api.copyNote(text);
     }
 
     function clearNote() {
       document.getElementById('noteText').value = '';
+      if (isClipboardMode) renderClipboardResults();
+    }
+
+    function getClipboardHistory() {
+      return document.getElementById('noteText').value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    function renderClipboardResults() {
+      if (!isClipboardMode) return;
+
+      const query = document.getElementById('clipboardSearch').value.trim().toLowerCase();
+      const history = getClipboardHistory();
+      filteredHistory = query
+        ? history.filter(line => line.toLowerCase().includes(query))
+        : history;
+
+      if (filteredHistory.length === 0) {
+        selectedHistoryIndex = -1;
+      } else if (selectedHistoryIndex < 0 || selectedHistoryIndex >= filteredHistory.length) {
+        selectedHistoryIndex = 0;
+      }
+
+      const list = document.getElementById('clipboardResults');
+      list.innerHTML = '';
+      filteredHistory.forEach((line, i) => {
+        const item = document.createElement('li');
+        item.textContent = line;
+        if (i === selectedHistoryIndex) item.classList.add('selected');
+        item.onclick = () => {
+          selectedHistoryIndex = i;
+          renderClipboardResults();
+          copyNote();
+        };
+        list.appendChild(item);
+      });
+    }
+
+    if (isClipboardMode) {
+      const search = document.getElementById('clipboardSearch');
+      search.addEventListener('input', () => {
+        selectedHistoryIndex = 0;
+        renderClipboardResults();
+      });
+      document.getElementById('noteText').addEventListener('input', renderClipboardResults);
+      renderClipboardResults();
+      search.focus();
     }
 
     // Auto-save on Cmd/Ctrl+S
@@ -89,6 +187,15 @@
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         saveNote();
+      } else if (isClipboardMode && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        if (filteredHistory.length === 0) return;
+        e.preventDefault();
+        const step = e.key === 'ArrowDown' ? 1 : -1;
+        selectedHistoryIndex = (selectedHistoryIndex + step + filteredHistory.length) % filteredHistory.length;
+        renderClipboardResults();
+      } else if (isClipboardMode && e.key === 'Enter' && document.activeElement.id === 'clipboardSearch') {
+        e.preventDefault();
+        copyNote();
       }
     });
   </script>

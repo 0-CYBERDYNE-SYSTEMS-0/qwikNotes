@@ -7,6 +7,7 @@ A simple macOS menu bar app for quick notes - AI prompts, API keys, and more.
 -  5 quick notes in the menu bar
 -  Notes persist between app restarts
 -  Copy notes to clipboard with one click
+-  Note 5 doubles as a clipboard manager (last 20 copies, searchable with arrow-key navigation)
 -  Clear notes easily
 
 ## Setup
